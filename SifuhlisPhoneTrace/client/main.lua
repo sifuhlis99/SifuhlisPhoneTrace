@@ -8,21 +8,22 @@ RegisterNetEvent('phone:requestPlayerLocation', function(trackingPlayerId)
     local playerPed = PlayerPedId()
     local coords = GetEntityCoords(playerPed)
 
-    -- Debug: Print the target player's coordinates
-    print(string.format("Sending target player location: x=%f, y=%f, z=%f", coords.x, coords.y, coords.z))
 
     -- Send the coordinates back to the server
     TriggerServerEvent('phone:sendPlayerLocation', trackingPlayerId, coords)
 end)
 
+-- Play sound when the player is being tracked
+RegisterNetEvent('phone:playTrackingSound')
+AddEventHandler('phone:playTrackingSound', function()
+    -- Play a sound here (you can customize the sound as needed)
+    PlaySoundFrontend(-1, "TIMER_STOP", "HUD_MINI_GAME_SOUNDSET", true)  -- random gta noises, too lazy to write a html document to handle custom sounds.
+end)
+
 -- Event triggered by the server to update the tracked player's location on the map (on the tracking player's client)
 RegisterNetEvent('phone:updatePlayerLocation', function(coords)
-    -- Debug: Check if tracking is active
-    print("Checking if tracking is active: ", tracking)
 
     if tracking then
-        -- Debug: Print received coordinates on tracking player's side
-        print(string.format("Received target player location: x=%f, y=%f, z=%f", coords.x, coords.y, coords.z))
 
         -- Remove old blip if it exists
         if blip then
@@ -46,7 +47,6 @@ end)
 
 -- Event triggered by the server to start tracking a player
 RegisterNetEvent('phone:trackPlayer', function()
-    print("Tracking event triggered, setting tracking to true")
     tracking = true  -- Set tracking to true when this event is triggered
     TriggerEvent('QBCore:Notify', "Started tracking the target.", "success")
 end)
