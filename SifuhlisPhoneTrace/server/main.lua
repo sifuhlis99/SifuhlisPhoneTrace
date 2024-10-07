@@ -22,6 +22,36 @@ function GetPlayerByPhoneNumber(phoneNumber)
 end
 
 
+-- Function to check if the player has the "taptracekit" item
+function HasTapTraceKit(source)
+    local Player = QBCore.Functions.GetPlayer(source)
+    if Player then
+        local inventory = Player.PlayerData.items
+        if inventory then
+            for _, item in pairs(inventory) do
+                if item.name == "taptracekit" then
+                    return true
+                end
+            end
+        end
+    end
+    return false
+end
+
+
+-- Function to notify target player with a 1-100 chance
+function NotifyTargetPlayer(targetPlayerId)
+    local chance = math.random(1, 100)  -- Generate a random number between 1 and 100
+
+    -- 40% chance to notify the target player
+    if chance <= 40 then  -- Adjust the chance threshold here
+        TriggerClientEvent('QBCore:Notify', targetPlayerId, "You are being tracked!", "error")
+        print("Notified target player with ID: " .. targetPlayerId)
+    else
+        print("Target player was not notified of tracking.")
+    end
+end
+
 -- Tracking command
 QBCore.Commands.Add("track", "Track a phone number (Police Only)", {{name="number", help="Phone number to track"}}, false, function(source, args)
     local Player = QBCore.Functions.GetPlayer(source)
@@ -34,6 +64,12 @@ QBCore.Commands.Add("track", "Track a phone number (Police Only)", {{name="numbe
         TriggerClientEvent('QBCore:Notify', source, "You do not have permission to track phone numbers.", "error")
         return
     end
+	
+	-- Check if the player has the tap trace kit
+    if not HasTapTraceKit(source) then
+        TriggerClientEvent('QBCore:Notify', source, "You need a Tap Trace Kit to track phones.", "error")
+        return
+    end
 
     local phoneNumber = args[1]
     if phoneNumber then
@@ -44,7 +80,11 @@ QBCore.Commands.Add("track", "Track a phone number (Police Only)", {{name="numbe
 
             -- Notify tracking player
             TriggerClientEvent('QBCore:Notify', source, "Tracking player with ID: " .. targetPlayerId, "success")
-
+			
+			-- Notify the target player that they are being tracked
+            NotifyTargetPlayer(targetPlayerId)
+			
+			
             -- Start tracking event on the tracking player's client
             TriggerClientEvent('phone:trackPlayer', source)
 
@@ -53,7 +93,7 @@ QBCore.Commands.Add("track", "Track a phone number (Police Only)", {{name="numbe
                 while trackedPhones[source] == targetPlayerId do
                     print("Requesting location from target player ID: " .. targetPlayerId)
                     TriggerClientEvent('phone:requestPlayerLocation', targetPlayerId, source)  -- Request location from target player
-                    Citizen.Wait(30000)  -- Update every 30 seconds
+                    Citizen.Wait(15000)  -- Update every 30 seconds
                 end
             end)
         else
